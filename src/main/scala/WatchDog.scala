@@ -1,71 +1,63 @@
-import org.joda.time.DateTime
+package scala.watchdog
+
+import org.joda.time.{Duration, DateTime}
+import scala.watchdog.Configuration
 
 //Needs to return data very quickly, but the actual handling of updates can be eventually consistent.
 //No need to have an up to the millisecond picture of the data
 //todo implement purging logic
-trait WatchDog extends WatchDogAPI{
+//todo this is no longer a functional api either!! it only kind of is...
 
-  val configuration : Configuration
-  type Watcher= WatchDogImpl
-  private var watchdogService = new WatchDogImpl(Map[String, List[EventRecord]]())
+class WatchDog(val records: Map[String, List[EventRecord]])(val configuration: Configuration)
+  extends IWatchDog {
 
-  //concurrency issues abound!!!!
-  def record[B](call: () => B, description: String) : B = {
-    val (res, svc) = watchdogService.recordCall(call, description)
-    watchdogService = svc
-    res
+  //Note maybe need to clean this up to return an either
+  final def allRecordsWhere(predicate: (EventRecord) => Boolean) = {
+    fullSet().filter(predicate)
   }
 
-  class WatchDogImpl(val records: Map[String, List[EventRecord]] ) extends IWatchDog{
+  final def recordsFor(description: String) = records.getOrElse(description, Nil)
 
-    //Note maybe need to clean this up to return an either
-    override def allRecordsWhere(predicate: (EventRecord) => Boolean) = {
-      fullSet().filter(predicate)
+  final val fullSet: () => List[EventRecord] = () => {
+    records.values.foldLeft(List[EventRecord]())((s, lst) => lst ::: s)
+  }
+
+  final def totalCallsFor(description: String): Either[String, Int] = {
+    records.get(description) match{
+      case Some(lst) => Right(lst.length)
+      case None => Left("Cannot find key for %s".format(description))
     }
+  }
 
-    override def recordsFor(description: String) = records.getOrElse(description, Nil)
+  final val totalCalls: Int = {
+    records.values.foldLeft(0)((l, r) => l + r.length )
+  }
 
-    override val fullSet: () => List[EventRecord] = () => {
-      records.values.foldLeft(List[EventRecord]())((s, lst) => lst ::: s)
-    }
+  final def recordCall[B](call:() => B, description: String): Result[B] = {
+    val start = DateTime.now()
+    val res = call()
+    val record = EventRecord(start, description, DateTime.now().getMillis - start.getMillis)
+    val records2 = records + ((description, record :: records.getOrElse(description, Nil)))
 
-    override def totalCallsFor(description: String): Either[String, Int] = {
-      records.get(description) match{
-        case Some(lst) => Right(lst.length)
-        case None => Left("Cannot find key for %s".format(description))
-      }
-    }
-
-    override val totalCalls: Int = {
-      records.values.foldLeft(0)((l, r) => l + r.length )
-    }
-
-    override def recordCall[B](call:() => B, description: String) = {
-      val start = DateTime.now()
-      val res = call()
-      val record = EventRecord(start, description, DateTime.now().getMillis - start.getMillis)
-      val records2 = records + ((description, record :: records.getOrElse(description, Nil)))
-
-      (res, new WatchDogImpl(records2))
-    }
+    Result[B](res, new WatchDog(records2)(configuration))
   }
 }
 
-trait WatchDogAPI{
+object WatchDog{
+  implicit val config = Configuration(Duration.standardSeconds(10), 10000, true, true)
+}
 
-  def watchdogService: IWatchDog
 
-  trait IWatchDog{
+trait IWatchDog{
 
-    def recordCall[B](call: () => B, description: String): (B, IWatchDog)
+  def recordCall[B](call: () => B, description: String): Result[B]
 
-    val totalCalls: Int
-    def totalCallsFor(description: String) : Either[String,  Int]
+  val totalCalls: Int
+  def totalCallsFor(description: String) : Either[String,  Int]
 
-    val fullSet:() => List[EventRecord]
-    def allRecordsWhere(predicate: EventRecord => Boolean): List[EventRecord]
-    def recordsFor(description: String) : List[EventRecord]
-  }
+  val fullSet:() => List[EventRecord]
+  def allRecordsWhere(predicate: EventRecord => Boolean): List[EventRecord]
+  def recordsFor(description: String) : List[EventRecord]
 }
 
 
