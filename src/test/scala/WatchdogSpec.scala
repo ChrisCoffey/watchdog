@@ -12,7 +12,6 @@ class WatchdogSpec extends Specification{
     implicit def extractSimple[A](r: Result[A]) = r.value
 
 
-
     "return the proper result of a passed call" in {
       val res = dog.recordCall(AlwaysTrue, TestName)
       res.value must beEqualTo(true)
@@ -83,6 +82,27 @@ class WatchdogSpec extends Specification{
       d2 ||> (AlwaysTrue, TestName)
       d2.fullSet() must have size(3)
     }
+
+    "return list of calls filtered by description" in {
+      var d2 = dog
+      implicit val extractUpdate = (r: Result[Boolean]) => {
+        d2 = r.dog
+        r.value
+      }
+
+      d2 ||> (AlwaysTrue, TestName)
+      d2 ||> (AlwaysTrue, TestName)
+      d2 ||> (AlwaysTrue, OtherName)
+      d2.recordsFor(OtherName) must have size(1)
+    }
+
+    //This is a gamble that the resolution on joda's milliseconds is coarse enough that a long interrupt won't fail the test
+    "properly records duration" in {
+      val res = dog.recordCall(() =>{ Thread.sleep(500); true; }, TestName)
+      res.dog.recordsFor(TestName).head.millisecondDuration must beEqualTo(500)
+    }
+
+
     
 
   }
