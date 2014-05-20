@@ -1,8 +1,6 @@
 package scala.watchdog
 
-import org.joda.time.{Duration}
 import org.specs2.mutable._
-import org.specs2.specification.Scope
 
 class WatchdogSpec extends Specification{
 
@@ -11,6 +9,9 @@ class WatchdogSpec extends Specification{
     val AlwaysTrue = () => true
     val TestName = "test"
     val OtherName = "platypus"
+    implicit def extractSimple[A](r: Result[A]) = r.value
+
+
 
     "return the proper result of a passed call" in {
       val res = dog.recordCall(AlwaysTrue, TestName)
@@ -64,6 +65,23 @@ class WatchdogSpec extends Specification{
         case _ => 0
       }
       calls must beEqualTo(1)
+    }
+
+    "properly extract value using ||>" in {
+      dog ||> (AlwaysTrue, TestName) must beEqualTo(true)
+    }
+
+    "return full list of calls during period" in {
+      var d2 = dog
+      implicit val extractUpdate = (r: Result[Boolean]) => {
+        d2 = r.dog
+        r.value
+      }
+
+      d2 ||> (AlwaysTrue, TestName)
+      d2 ||> (AlwaysTrue, TestName)
+      d2 ||> (AlwaysTrue, TestName)
+      d2.fullSet() must have size(3)
     }
     
 

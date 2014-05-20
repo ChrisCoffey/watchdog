@@ -41,6 +41,10 @@ class WatchDog(val records: Map[String, List[EventRecord]])(val configuration: C
 
     Result[B](res, new WatchDog(records2)(configuration))
   }
+
+  final def ||>[B](call:() => B, description: String)(implicit f: Result[B] => B): B = {
+    f(recordCall(call, description))
+  }
 }
 
 object WatchDog{
