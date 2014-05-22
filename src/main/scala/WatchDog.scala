@@ -11,7 +11,9 @@ class WatchDog(val records: Map[String, List[EventRecord]])
     fullSet().filter(predicate)
   }
 
-  final def recordsFor(description: String) = records.getOrElse(description, Nil)
+  final def recordsFor(description: String) = {
+    records.getOrElse(description, Nil)
+  }
 
   final val fullSet: () => List[EventRecord] = () => {
     records.values.foldLeft(List[EventRecord]())((s, lst) => lst ::: s)

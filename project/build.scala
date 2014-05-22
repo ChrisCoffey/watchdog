@@ -13,11 +13,7 @@ object WatchDogBuild extends Build{
       exportJars := true,
 			scalacOptions ++= Seq("-unchecked", "-deprecation", "utf8"),
       resolvers ++= Seq(Resolvers.sonatype, Resolvers.typesafe),
-      libraryDependencies ++= Seq(
-        Dependencies.jodaTime,
-        Dependencies.specs2,
-        Dependencies.lmaxDisruptor
-      )
+      libraryDependencies ++= Dependencies.coreDependencies
 		)
 
   val pluginSettings = Seq(
@@ -32,20 +28,44 @@ object WatchDogBuild extends Build{
     settings = Project.defaultSettings ++ buildSettings ++ SbtOneJar.oneJarSettings
   )
 
-/*  lazy val examples = Project(
+  lazy val examples = Project(
     id="watchdog-examples",
     base=file("examples"),
-    settings = Project.defaultSettings ++ buildSettings
-  )*/
+    settings = Project.defaultSettings ++ buildSettings ++ Seq(
+      libraryDependencies ++= Dependencies.exampleDependencies,
+      resolvers ++= Seq(Resolvers.spray)
+    )
+  )
 }
 
 object Dependencies{
+
+  val akkaV = "2.1.4"
+  val sprayV = "1.1.1"
+
   val jodaTime = "joda-time" % "joda-time" % "2.3"
   val specs2 = "org.specs2" %% "specs2" % "2.3.12" % "test"
   val lmaxDisruptor = "com.lmax" % "disruptor" % "3.0.1"
+  val akka = "com.typesafe.akka" %% "akka-actor" % akkaV
+  val sprayCan =  "io.spray" % "spray-can" % sprayV
+  val sprayRouting = "io.spray" % "spray-routing" % sprayV
+
+
+  val coreDependencies = Seq(
+   jodaTime,
+   specs2,
+   lmaxDisruptor
+  )
+
+  val exampleDependencies = Seq(
+    akka,
+    sprayCan,
+    sprayRouting
+  )
 }
 
 object Resolvers{
   val sonatype =  "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/releases"
   val typesafe = "Typesafe repo" at "http://repo.typesafe.com/typesafe/releases/"
+  val spray = "spray" at "http://repo.spray.io/"
 }
