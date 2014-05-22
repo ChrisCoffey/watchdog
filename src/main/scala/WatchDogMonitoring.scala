@@ -5,7 +5,7 @@ import com.lmax.disruptor._
 import com.lmax.disruptor.dsl.{ProducerType, Disruptor}
 
 
-trait DogHouse {
+trait WatchDogMonitoring {
 
   var watchdog = new WatchDog(Map[String, List[EventRecord]]())
   val configuration: Configuration
