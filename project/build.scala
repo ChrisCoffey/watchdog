@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import sbtbuildinfo.Plugin._
+import com.github.retronym.SbtOneJar
 
 object WatchDogBuild extends Build{
 
@@ -9,6 +10,7 @@ object WatchDogBuild extends Build{
       name := "watchdog",
       version := "0.0.0.1",
 			scalaVersion := "2.11.0",
+      exportJars := true,
 			scalacOptions ++= Seq("-unchecked", "-deprecation", "utf8"),
       resolvers ++= Seq(Resolvers.sonatype, Resolvers.typesafe),
       libraryDependencies ++= Seq(
@@ -27,8 +29,14 @@ object WatchDogBuild extends Build{
   lazy val root = Project(
     id = "watchdog",
     base= file("."),
-    settings = Project.defaultSettings ++ buildSettings
+    settings = Project.defaultSettings ++ buildSettings ++ SbtOneJar.oneJarSettings
   )
+
+/*  lazy val examples = Project(
+    id="watchdog-examples",
+    base=file("examples"),
+    settings = Project.defaultSettings ++ buildSettings
+  )*/
 }
 
 object Dependencies{
