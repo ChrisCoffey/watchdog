@@ -6,7 +6,7 @@ import com.github.retronym.SbtOneJar
 object WatchDogBuild extends Build{
 
 	val buildSettings = Defaults.defaultSettings ++ Seq(
-			organization := "Chris Coffey",
+			organization := "org.scala.watchdog",
       name := "watchdog",
       version := "0.0.0.1",
 			scalaVersion := "2.11.0",
@@ -40,13 +40,13 @@ object WatchDogBuild extends Build{
 
 object Dependencies{
 
-  val akkaV = "2.1.4"
+  val akkaV = "2.2-M4"
   val sprayV = "1.1.1"
 
   val jodaTime = "joda-time" % "joda-time" % "2.3"
   val specs2 = "org.specs2" %% "specs2" % "2.3.12" % "test"
   val lmaxDisruptor = "com.lmax" % "disruptor" % "3.0.1"
-  val akka = "com.typesafe.akka" %% "akka-actor" % akkaV
+  val akka = "com.typesafe.akka" % "akka-actor_2.11.0-M3" % akkaV
   val sprayCan =  "io.spray" % "spray-can" % sprayV
   val sprayRouting = "io.spray" % "spray-routing" % sprayV
 
