@@ -28,7 +28,7 @@ trait DogHouse {
   case class Mutation(var f: WatchDog => WatchDog)
 
   case class DeltaEventTranslator(f: WatchDog => WatchDog) extends EventTranslator[Mutation]{
-    def translateTo(event: Mutation, sequence: Long): Mutation = {
+    def translateTo(event: Mutation, sequence: Long) = {
       event.f = f
       event
     }
