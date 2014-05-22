@@ -13,7 +13,8 @@ object WatchDogBuild extends Build{
       resolvers ++= Seq(Resolvers.sonatype, Resolvers.typesafe),
       libraryDependencies ++= Seq(
         Dependencies.jodaTime,
-        Dependencies.specs2
+        Dependencies.specs2,
+        Dependencies.lmaxDisruptor
       )
 		)
 
@@ -33,7 +34,7 @@ object WatchDogBuild extends Build{
 object Dependencies{
   val jodaTime = "joda-time" % "joda-time" % "2.3"
   val specs2 = "org.specs2" %% "specs2" % "2.3.12" % "test"
-
+  val lmaxDisruptor = "com.lmax" % "disruptor" % "3.0.1"
 }
 
 object Resolvers{

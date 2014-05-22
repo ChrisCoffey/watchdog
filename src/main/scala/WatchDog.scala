@@ -8,7 +8,7 @@ import scala.watchdog.Configuration
 //todo implement purging logic
 //todo this is no longer a functional api either!! it only kind of is...
 
-class WatchDog(val records: Map[String, List[EventRecord]])(val configuration: Configuration)
+class WatchDog(val records: Map[String, List[EventRecord]])
   extends IWatchDog {
 
   //Note maybe need to clean this up to return an either
@@ -33,28 +33,43 @@ class WatchDog(val records: Map[String, List[EventRecord]])(val configuration: C
     records.values.foldLeft(0)((l, r) => l + r.length )
   }
 
-  final def recordCall[B](call:() => B, description: String): Result[B] = {
+  final def recordCall[B](call:() => B, description: String): ResultDelta[B] = {
     val start = DateTime.now()
     val res = call()
     val record = EventRecord(start, description, DateTime.now().getMillis - start.getMillis)
-    val records2 = records + ((description, record :: records.getOrElse(description, Nil)))
 
-    Result[B](res, new WatchDog(records2)(configuration))
+    val f = (w: WatchDog) => {
+      val updatedRecords = w.records + ((description, record :: w.records.getOrElse(description, Nil)))
+      new WatchDog(updatedRecords)
+    }
+
+    ResultDelta[B](res, f)
   }
 
-  final def ||>[B](call:() => B, description: String)(implicit f: Result[B] => B): B = {
+  final def ||>[B](call:() => B, description: String)(implicit f: ResultDelta[B] => B): B = {
     f(recordCall(call, description))
   }
 }
 
 object WatchDog{
   implicit val config = Configuration(Duration.standardSeconds(10), 10000, true, true)
-}
 
+  def purgeDescriptor(watchDog: WatchDog, description: String) = {
+    new WatchDog(watchDog.records - description)
+  }
+
+  def merge(l: WatchDog, r: WatchDog) = {
+    val partialMerge = l.records.toSeq ++ r.records.toSeq
+    val grouped = partialMerge.groupBy(_._1)
+    val merged = grouped.mapValues(_.map(_._2).toList).mapValues(_.foldLeft(List[EventRecord]())((a, b) => a union b))
+
+    new WatchDog(merged)
+  }
+}
 
 trait IWatchDog{
 
-  def recordCall[B](call: () => B, description: String): Result[B]
+  def recordCall[B](call: () => B, description: String): ResultDelta[B]
 
   val totalCalls: Int
   def totalCallsFor(description: String) : Either[String,  Int]
