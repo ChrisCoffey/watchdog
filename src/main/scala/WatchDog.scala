@@ -3,11 +3,6 @@ package scala.watchdog
 import org.joda.time.{Duration, DateTime}
 import scala.watchdog.Configuration
 
-//Needs to return data very quickly, but the actual handling of updates can be eventually consistent.
-//No need to have an up to the millisecond picture of the data
-//todo implement purging logic
-//todo this is no longer a functional api either!! it only kind of is...
-
 class WatchDog(val records: Map[String, List[EventRecord]])
   extends IWatchDog {
 
@@ -52,8 +47,6 @@ class WatchDog(val records: Map[String, List[EventRecord]])
 }
 
 object WatchDog{
-  implicit val config = Configuration(Duration.standardSeconds(10), 10000, true, true)
-
   def purgeDescriptor(watchDog: WatchDog, description: String) = {
     new WatchDog(watchDog.records - description)
   }
